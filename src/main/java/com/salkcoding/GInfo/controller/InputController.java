@@ -2,9 +2,14 @@ package com.salkcoding.GInfo.controller;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParser;
+import com.salkcoding.GInfo.data.Login;
+import com.salkcoding.GInfo.dto.LoginDTO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.io.BufferedReader;
@@ -14,6 +19,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
+@Slf4j
 @Controller
 public class InputController {
 
@@ -22,19 +28,31 @@ public class InputController {
         return "input";
     }
 
-    @GetMapping("/login")
-    public String resultForm(@RequestParam String id, @RequestParam String pw, Model model) {
-        System.out.println(id);
-        System.out.println(pw);
+    @PostMapping("/login")
+    public String resultForm(LoginDTO dto, Model model){
+        Login login = dto.toLogin();
         String stringURL = String.format(
                 "https://att.gachon.ac.kr/ajax/PU_MNMN01_SVC/PU_MNMN01_LOGIN.do?" +
                         "USER_ID=%s&" +
-                        "USER_PW=%s&isMobile=true&language=ko"
+                        "USER_PW=%s&language=ko"
+                ,login.getId(),login.getPassword());
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        String stringJson = getOpenStreamUrl(stringURL);
+        String pretty = gson.toJson(JsonParser.parseString(stringJson));
+        model.addAttribute("data", pretty);
+        return "result";
+    }
+
+    @GetMapping("/login")
+    public String resultForm(@RequestParam String id, @RequestParam String pw, Model model) {
+        String stringURL = String.format(
+                "https://att.gachon.ac.kr/ajax/PU_MNMN01_SVC/PU_MNMN01_LOGIN.do?" +
+                        "USER_ID=%s&" +
+                        "USER_PW=%s&language=ko"
         ,id,pw);
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
-        String pretty=gson.toJson(
-                URLDecoder.decode(getOpenStreamUrl(stringURL),StandardCharsets.UTF_8)
-        );
+        String stringJson = getOpenStreamUrl(stringURL);
+        String pretty = gson.toJson(JsonParser.parseString(stringJson));
         model.addAttribute("data", pretty);
         return "result";
     }
